@@ -1,0 +1,62 @@
+import json
+import collections
+import time
+from nltk.tokenize import word_tokenize
+
+lista_chetada = list()
+lista_long = list()
+
+def recomendador(recipes):
+    
+    with open('./data.json') as file:
+        data = json.load(file)
+    
+    for i in range(len(data)):
+        cat = (data[i]['category'])
+        ingr = (data[i]['ingredients'])
+    
+    start = time.time()
+    recipes["tokenized_ingr"] = recipes["ingredients"].apply(word_tokenize)
+    ("series.apply", (time.time() - start))
+    
+    recipes['tokenized_ingr'] = recipes['tokenized_ingr'].fillna('')
+    recipes['ingredients'] = recipes['ingredients'].fillna('')
+    
+    
+    for row in recipes['tokenized_ingr']:
+
+        lst = row
+        search = ingr
+
+        pn = ([(w) for w in set(lst) if w in search])
+        lista_chetada.append(pn)
+        
+    recipes['ingr_json'] = lista_chetada
+    
+    recipes_jon_sin_nan = recipes[recipes['ingr_json'].astype(bool)]
+    
+    #Define a new movies variable to store the preferred movies. Copy the contents of gen_df to movies
+    recipes_rec = recipes_jon_sin_nan.copy() 
+    
+    
+    #filter based on the condition
+    recipes_rec = recipes_rec[(recipes_rec['Category'] == cat)]
+    
+    
+    for i in recipes_rec['ingr_json']:
+        lenth = len(i)
+        lista_long.append(lenth)
+        
+    recipes_rec['json_count']= lista_long
+    
+    recipes_rec  = recipes_rec.sort_values(by = 'json_count', ascending=False)
+    recipes_rec = recipes_rec.reset_index()
+    recipes_rec = recipes_rec.drop(recipes_rec.columns[0],axis=1)
+    recipes_rec = recipes_rec[(recipes_rec['json_count'] >= 3)]
+    
+    #Exportamos el csv:
+    recipes_rec.to_csv('./data/recomendado.csv', index=False)
+    
+    
+    
+    return recipes_rec
